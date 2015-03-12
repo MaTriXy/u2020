@@ -9,9 +9,9 @@ The `ObjectGraph` is created in the `U2020App`'s `onCreate` method. The `Modules
 single method, `list`, which returns the list of module instances to use.
 
 In order to add functionality in the 'debug' version of the app, this class is only present in the
-`release/` and `debug/` flavor folders. The 'release' version only includes the `U2020Module` while
+`release/` and `debug/` build type folders. The 'release' version only includes the `U2020Module` while
 the 'debug' version includes both `U2020Module` and `DebugU2020Module`, the latter of which is only
-present in the `debug/` flavor folder and is an override module.
+present in the `debug/` build type folder and is an override module.
 
 Through the use of Dagger overrides, the 'debug' version of the app adds a slew of debugging
 features to the app which are presented in the Debug Drawer™. The drawer is opened by a bezel
@@ -68,7 +68,7 @@ Libraries
  * Retrofit - http://square.github.io/retrofit
  * Picasso - http://square.github.io/picasso
  * OkHttp - http://square.github.io/okhttp
- * RxJava - http://github.com/Netflix/RxJava
+ * RxJava - https://github.com/ReactiveX/RxJava
  * Timber - http://github.com/JakeWharton/timber
  * Madge - http://github.com/JakeWharton/madge
  * Scalpel - http://github.com/JakeWharton/scalpel
@@ -82,7 +82,7 @@ To Do
  * Something with animations to showcase animation control.
  * Network errors probably crash the app.
  * Add another part of the app other than 'gallery' so we can demo child graphs.
- * Pressed state no longer works thanks to Etsy.
+ * Kill Etsy view in favor of RecyclerView
  * Toss column count into dimen and scale appropriately.
  * Controls to change which gallery we're looking at?
 
@@ -107,4 +107,4 @@ License
 
 
  [parleys]: http://parleys.com/play/529bde2ce4b0e619540cc3ae
- [slides]: https://speakerdeck.com/jakewharton/android-apps-with-dagger
+ [slides]: https://speakerdeck.com/jakewharton/android-apps-with-dagger-devoxx-2013

@@ -3,6 +3,7 @@ package com.jakewharton.u2020.ui.debug;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -30,8 +31,8 @@ import com.jakewharton.u2020.BuildConfig;
 import com.jakewharton.u2020.R;
 import com.jakewharton.u2020.U2020App;
 import com.jakewharton.u2020.data.AnimationSpeed;
-import com.jakewharton.u2020.data.Endpoint;
-import com.jakewharton.u2020.data.Endpoints;
+import com.jakewharton.u2020.data.ApiEndpoint;
+import com.jakewharton.u2020.data.ApiEndpoints;
 import com.jakewharton.u2020.data.NetworkProxy;
 import com.jakewharton.u2020.data.PicassoDebugging;
 import com.jakewharton.u2020.data.PixelGridEnabled;
@@ -94,13 +95,13 @@ public class DebugAppContainer implements AppContainer {
   private final BooleanPreference seenDebugDrawer;
   private final RestAdapter restAdapter;
   private final MockRestAdapter mockRestAdapter;
+  private final Application app;
 
-  U2020App app;
   Activity activity;
   Context drawerContext;
 
   @Inject public DebugAppContainer(OkHttpClient client, Picasso picasso,
-      @Endpoint StringPreference networkEndpoint, @NetworkProxy StringPreference networkProxy,
+      @ApiEndpoint StringPreference networkEndpoint, @NetworkProxy StringPreference networkProxy,
       @AnimationSpeed IntPreference animationSpeed,
       @PicassoDebugging BooleanPreference picassoDebugging,
       @PixelGridEnabled BooleanPreference pixelGridEnabled,
@@ -108,7 +109,7 @@ public class DebugAppContainer implements AppContainer {
       @ScalpelEnabled BooleanPreference scalpelEnabled,
       @ScalpelWireframeEnabled BooleanPreference scalpelWireframeEnabled,
       @SeenDebugDrawer BooleanPreference seenDebugDrawer, RestAdapter restAdapter,
-      MockRestAdapter mockRestAdapter) {
+      MockRestAdapter mockRestAdapter, Application app) {
     this.client = client;
     this.picasso = picasso;
     this.networkEndpoint = networkEndpoint;
@@ -122,13 +123,12 @@ public class DebugAppContainer implements AppContainer {
     this.pixelGridEnabled = pixelGridEnabled;
     this.pixelRatioEnabled = pixelRatioEnabled;
     this.restAdapter = restAdapter;
+    this.app = app;
   }
 
   @InjectView(R.id.debug_drawer_layout) DrawerLayout drawerLayout;
-  @InjectView(R.id.debug_content) ViewGroup content;
-
   @InjectView(R.id.madge_container) MadgeFrameLayout madgeFrameLayout;
-  @InjectView(R.id.debug_content) ScalpelFrameLayout scalpelFrameLayout;
+  @InjectView(R.id.debug_content) ScalpelFrameLayout content;
 
   @InjectView(R.id.debug_contextual_title) View contextualTitleView;
   @InjectView(R.id.debug_contextual_list) LinearLayout contextualListView;
@@ -170,8 +170,7 @@ public class DebugAppContainer implements AppContainer {
   @InjectView(R.id.debug_picasso_transformed_total) TextView picassoTransformedTotalView;
   @InjectView(R.id.debug_picasso_transformed_avg) TextView picassoTransformedAvgView;
 
-  @Override public ViewGroup get(final Activity activity, U2020App app) {
-    this.app = app;
+  @Override public ViewGroup get(final Activity activity) {
     this.activity = activity;
     drawerContext = activity;
 
@@ -217,17 +216,17 @@ public class DebugAppContainer implements AppContainer {
   }
 
   private void setupNetworkSection() {
-    final Endpoints currentEndpoint = Endpoints.from(networkEndpoint.get());
-    final EnumAdapter<Endpoints> endpointAdapter =
-        new EnumAdapter<>(drawerContext, Endpoints.class);
+    final ApiEndpoints currentEndpoint = ApiEndpoints.from(networkEndpoint.get());
+    final EnumAdapter<ApiEndpoints> endpointAdapter =
+        new EnumAdapter<>(drawerContext, ApiEndpoints.class);
     endpointView.setAdapter(endpointAdapter);
     endpointView.setSelection(currentEndpoint.ordinal());
     endpointView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
       @Override
       public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
-        Endpoints selected = endpointAdapter.getItem(position);
+        ApiEndpoints selected = endpointAdapter.getItem(position);
         if (selected != currentEndpoint) {
-          if (selected == Endpoints.CUSTOM) {
+          if (selected == ApiEndpoints.CUSTOM) {
             Timber.d("Custom network endpoint selected. Prompting for URL.");
             showCustomEndpointDialog(currentEndpoint.ordinal(), "http://");
           } else {
@@ -326,9 +325,9 @@ public class DebugAppContainer implements AppContainer {
     });
 
     // Only show the endpoint editor when a custom endpoint is in use.
-    endpointEditView.setVisibility(currentEndpoint == Endpoints.CUSTOM ? VISIBLE : GONE);
+    endpointEditView.setVisibility(currentEndpoint == ApiEndpoints.CUSTOM ? VISIBLE : GONE);
 
-    if (currentEndpoint == Endpoints.MOCK_MODE) {
+    if (currentEndpoint == ApiEndpoints.MOCK_MODE) {
       // Disable network proxy if we are in mock mode.
       networkProxyView.setEnabled(false);
       networkLoggingView.setEnabled(false);
@@ -420,26 +419,26 @@ public class DebugAppContainer implements AppContainer {
     });
 
     boolean scalpel = scalpelEnabled.get();
-    scalpelFrameLayout.setLayerInteractionEnabled(scalpel);
+    content.setLayerInteractionEnabled(scalpel);
     uiScalpelView.setChecked(scalpel);
     uiScalpelWireframeView.setEnabled(scalpel);
     uiScalpelView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         Timber.d("Setting scalpel interaction enabled to " + isChecked);
         scalpelEnabled.set(isChecked);
-        scalpelFrameLayout.setLayerInteractionEnabled(isChecked);
+        content.setLayerInteractionEnabled(isChecked);
         uiScalpelWireframeView.setEnabled(isChecked);
       }
     });
 
     boolean wireframe = scalpelWireframeEnabled.get();
-    scalpelFrameLayout.setDrawViews(!wireframe);
+    content.setDrawViews(!wireframe);
     uiScalpelWireframeView.setChecked(wireframe);
     uiScalpelWireframeView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       @Override public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         Timber.d("Setting scalpel wireframe enabled to " + isChecked);
         scalpelWireframeEnabled.set(isChecked);
-        scalpelFrameLayout.setDrawViews(!isChecked);
+        content.setDrawViews(!isChecked);
       }
     });
   }
@@ -623,6 +622,6 @@ public class DebugAppContainer implements AppContainer {
     Intent newApp = new Intent(app, MainActivity.class);
     newApp.setFlags(FLAG_ACTIVITY_CLEAR_TASK | FLAG_ACTIVITY_NEW_TASK);
     app.startActivity(newApp);
-    app.buildObjectGraphAndInject();
+    U2020App.get(app).buildObjectGraphAndInject();
   }
 }

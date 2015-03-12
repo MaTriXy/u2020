@@ -4,7 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import com.jakewharton.u2020.ui.ActivityHierarchyServer;
 import dagger.ObjectGraph;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import timber.log.Timber;
 
@@ -31,13 +30,8 @@ public class U2020App extends Application {
   }
 
   public void buildObjectGraphAndInject() {
-    long start = System.nanoTime();
-
     objectGraph = ObjectGraph.create(Modules.list(this));
     objectGraph.inject(this);
-
-    long diff = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-    Timber.i("Global object graph creation took %sms", diff);
   }
 
   public void inject(Object o) {
